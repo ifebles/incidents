@@ -196,7 +196,7 @@ myMapper.prototype.setNotFound = (routeHandler, paramDict = undefined) => {
 
 
 /**
- * Set behavior and assing headers when a valid request is made
+ * Set behavior and adding headers when a valid request is made
  * @param {!function} routeHandler Route handler (controller)
  * @param {*} paramDict Dictionary to send along with the "__context" property
  */
