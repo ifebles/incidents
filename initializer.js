@@ -34,7 +34,14 @@ exports.mapper = new myMapper()
 var initializeDB = () => {
 
     MongoClient.connect(mongoUrl, (err, db) => {
-        if (err) throw err;
+        // if (err) throw err;
+
+        if (err)
+        {
+            console.log("Trying to reconnect...");
+            setTimeout(initializeDB, 5000);
+            return;
+        }
         
         var dbo = db.db(mongoDBName);
 
@@ -46,13 +53,7 @@ var initializeDB = () => {
                     { name: "Los Alcarrizos" },
                     { name: "Los Proceres" }
                 ], (err, resp) => {
-                    // if (err) throw err;
-                    if (err)
-                    {
-                        console.log("Trying to reconnect...");
-                        setTimeout(initializeDB, 5000);
-                        return;
-                    }
+                    if (err) throw err;
 
                     console.log("configured");
 
