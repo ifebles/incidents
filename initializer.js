@@ -31,7 +31,7 @@ exports.mapper = new myMapper()
     .addRoute('localities/?{localityId}', controllers.locality, undefined, "get")
 
 
-exports.initializeDB = () => {
+var initializeDB = () => {
 
     MongoClient.connect(mongoUrl, (err, db) => {
         if (err) throw err;
@@ -46,7 +46,13 @@ exports.initializeDB = () => {
                     { name: "Los Alcarrizos" },
                     { name: "Los Proceres" }
                 ], (err, resp) => {
-                    if (err) throw err;
+                    // if (err) throw err;
+                    if (err)
+                    {
+                        console.log("Trying to reconnect...");
+                        setTimeout(initializeDB, 5000);
+                        return;
+                    }
 
                     console.log("configured");
 
@@ -55,3 +61,5 @@ exports.initializeDB = () => {
         });
     });
 };
+
+exports.initializeDB = initializeDB;
