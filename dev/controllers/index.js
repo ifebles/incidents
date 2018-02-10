@@ -3,7 +3,9 @@
 const MongoClient = require("mongodb").MongoClient;
 const qs = require("querystring");
 
-const mongoUrl = "mongodb://3c07334f386a:27017/";
+const hostName = process.env.INCIDENTS_DB_SERVER_NAME !== undefined ? process.env.INCIDENTS_DB_SERVER_NAME: "localhost";
+
+const mongoUrl = `mongodb://${hostName}:27017/`;
 const mongoDBName = "incident";
 const mongoCol_locality = "dbLocality";
 const mongoCol_incidents = "dbIncident";
@@ -33,14 +35,19 @@ exports.incidents = (params) => {
 
         case "post":
             var requestBody = "";
+            // var requestBody_arr = [];
 
             params.__context.request.on("data", (data) => {
                 requestBody += data;
+                // requestBody_arr.push(data);
             });
 
             params.__myMapper.setEndOfResponse((innerParams) => {
                 params.__context.request.on("end", () => {
                     var formData = qs.parse(requestBody);
+
+                    // console.log(Buffer.concat(requestBody_arr).toString())
+                    // console.log(requestBody_arr)
 
                     const validParams = [
                         "kind", "locationId", "happenedAt"
@@ -49,6 +56,7 @@ exports.incidents = (params) => {
                     for (var a in formData)
                         if (validParams.indexOf(a) === -1)
                         {
+                            console.log(`/POST incidents/: Invalid param "${a}"`)
                             innerParams.__context.response.end("false");
                             return;
                         }
@@ -94,18 +102,23 @@ exports.incidents = (params) => {
                                             if (resp.result.ok && resp.result.n)
                                                 innerParams.__context.response.end("true");
                                             else
+                                            {
+                                                console.log(`/POST incidents/: Values not inserted: "${JSON.stringify(formData)}". Result: "${JSON.stringify(resp.result)}"`)
                                                 innerParams.__context.response.end("false");
+                                            }
 
                                             db.close();
                                         });
                                     else
                                     {
+                                        console.log(`/POST incidents/: Invalid param(s): "${JSON.stringify(formData)}".`)
                                         innerParams.__context.response.end("false");
                                         db.close();
                                     }
                                 });
                         }
                         catch (ex) {
+                            console.log(`/POST incidents/: Exception ocurred: "${JSON.stringify(ex)}".`)
                             params.__context.response.end("false");
                             db.close();
                         }

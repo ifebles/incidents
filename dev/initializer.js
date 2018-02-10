@@ -3,7 +3,9 @@ const MongoClient = require("mongodb").MongoClient;
 const myMapper = require('./require/myMapper');
 const controllers = require('./controllers');
 
-const mongoUrl = "mongodb://3c07334f386a:27017/";
+const hostName = process.env.INCIDENTS_DB_SERVER_NAME !== undefined ? process.env.INCIDENTS_DB_SERVER_NAME: "localhost";
+
+const mongoUrl = `mongodb://${hostName}:27017/`;
 const mongoDBName = "incident";
 const mongoCol_locality = "dbLocality";
 const mongoCol_incidents = "dbIncident";
@@ -59,6 +61,8 @@ var initializeDB = () => {
 
                     db.close();
                 })
+            else
+                db.close();
         });
     });
 };

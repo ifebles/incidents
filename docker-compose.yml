@@ -12,3 +12,5 @@ services:
      - "8000:8000"
     links:
      - mongo
+    environment:
+     - INCIDENTS_DB_SERVER_NAME=3c07334f386a
