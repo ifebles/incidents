@@ -20,9 +20,16 @@ test("/POST incidents/ incidents/${incidentId}/archive/", async t => {
     t.true(typeof getLocs === typeof [], "The response is not an object");
     t.true(getLocs.length >= 1, "The result must have at least 1 register to test with");
 
+    const localityId = getLocs[0]._id;
+
     //////////////////////////////////
 
-    const form = { kind: "robbery", locationId: getLocs[0]._id, happenedAt: "2018-02-07" };
+    const getLoc = await http.get("http://localhost:8000/localities/" + localityId);
+    t.true(getLoc._id !== undefined, "The response should return an existing locality");
+
+    //////////////////////////////////
+
+    const form = { kind: "robbery", locationId: localityId, happenedAt: "2018-02-07" };
     const myPost = await http.post("http://localhost:8000/incidents", { form });
     t.true(myPost === true, "Response must be true");
 
