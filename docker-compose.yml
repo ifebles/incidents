@@ -2,7 +2,7 @@
 version: '3'
 services:
   mongo:
-    build: ./db/
+    image: 'mongo:latest'
     ports:
      - "27017:27017"
 
@@ -13,4 +13,4 @@ services:
     links:
      - mongo
     environment:
-     - INCIDENTS_DB_SERVER_NAME=3c07334f386a
+     - INCIDENTS_DB_SERVER_NAME=0b218c69f692
