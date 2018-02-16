@@ -1,14 +1,35 @@
 
-const MongoClient = require("mongodb").MongoClient;
 const myMapper = require('./require/myMapper');
+const myMongoClass = require("./require/myMongo");
 const controllers = require('./controllers');
 
+
+/**
+ * Hostname of the database server 
+ */
 const hostName = process.env.INCIDENTS_DB_SERVER_NAME !== undefined ? process.env.INCIDENTS_DB_SERVER_NAME: "localhost";
 
-const mongoUrl = `mongodb://${hostName}:27017/`;
-const mongoDBName = "incident";
+
+/**
+ * Class' instace for my MongoDB handler  
+ */
+const myMongo = new myMongoClass({
+    hostName: hostName,
+    dbName: "incident"
+});
+
+// <MongoDB_collections> //
 const mongoCol_locality = "dbLocality";
 const mongoCol_incidents = "dbIncident";
+// </MongoDB_collections> //
+
+
+// <Values_to_inject> //
+controllers.myMongo = myMongo;
+controllers.mongoCol_locality = mongoCol_locality;
+controllers.mongoCol_incidents = mongoCol_incidents;
+// </Values_to_inject> //
+
 
 
 /**
@@ -33,38 +54,26 @@ exports.mapper = new myMapper()
     .addRoute('localities/?{localityId}', controllers.locality, undefined, "get")
 
 
+/**
+ * Preset the required values from the Database
+ */
 var initializeDB = () => {
-
-    MongoClient.connect(mongoUrl, (err, db) => {
-        // if (err) throw err;
-
-        if (err)
-        {
-            console.log("Trying to reconnect...");
-            setTimeout(initializeDB, 5000);
-            return;
-        }
-        
-        var dbo = db.db(mongoDBName);
-
-        dbo.collection(mongoCol_locality).findOne({}, (err, resp) => {
-            if (err) throw err;
-
-            if (resp === null)
-                dbo.collection(mongoCol_locality).insertMany([
+    myMongo.findOne(mongoCol_locality)
+        .then((obj) => {
+            if (obj === null)
+                myMongo.insertMany(mongoCol_locality, [
                     { name: "Los Alcarrizos" },
                     { name: "Los Proceres" }
-                ], (err, resp) => {
-                    if (err) throw err;
-
+                ]).then((result) => {
                     console.log("configured");
-
-                    db.close();
-                })
-            else
-                db.close();
+                }).catch((reason) => {
+                    console.log(reason);
+                });
+        })
+        .catch((reason) => {
+            console.log("Trying to reconnect...");
+            setTimeout(initializeDB, 5000);
         });
-    });
 };
 
 exports.initializeDB = initializeDB;

@@ -87,10 +87,10 @@ myMapper.prototype.getMappedRoutes = () => {
  */
 myMapper.prototype.addRoute = (routeName, routeHandler, paramDict = undefined, methods = undefined) => {
     if (typeof routeName !== "string")
-        throw new Error("A string was expected for the first parameter (routeName). \"" + typeof routeName + "\" given.");
+        throw new Error(`A string was expected for the first parameter (routeName). "${typeof routeName}" given.`);
 
     if (typeof routeHandler !== "function")
-        throw new Error("A function was expected for the second parameter (routeHandler). \"" + typeof routeHandler + "\" given.");
+        throw new Error(`A function was expected for the second parameter (routeHandler). "${typeof routeHandler}" given.`);
 
     var typeOfMethods = typeof methods;
 
@@ -113,7 +113,7 @@ myMapper.prototype.addRoute = (routeName, routeHandler, paramDict = undefined, m
             else if (typeOfMethods === "object")
             {
                 if (!methods.indexOf)
-                    throw new Error("A string or string[] was expected for the parameter <methods>. \"" + typeof methods + "\" given.");
+                    throw new Error(`A string or string[] was expected for the parameter <methods>. "${typeof methods}" given.`);
 
                 methods = methods.toString().toLowerCase().split(",");
             }
@@ -128,13 +128,13 @@ myMapper.prototype.addRoute = (routeName, routeHandler, paramDict = undefined, m
                     filter.push(methods[a].trim());
 
             if (doNotExist)
-                throw new Error("The given values for the parameter <methods> (\"" + methods + "\") are invalid. The allowed methods are \"" + allowedMethods + "\"");
+                throw new Error(`The given values for the parameter <methods> ("${methods}") are invalid. The allowed methods are "${allowedMethods}"`);
 
             methods = filter;
         break;
 
         default:
-            throw new Error("A string or string[] was expected for the parameter <methods>. \"" + typeof methods + "\" given.");
+            throw new Error(`A string or string[] was expected for the parameter <methods>. "${typeof methods}" given.`);
     }
 
     // Quitar slashes iniciales, finales y los duplicados
@@ -149,7 +149,7 @@ myMapper.prototype.addRoute = (routeName, routeHandler, paramDict = undefined, m
     //         throw new Error("The given route name is already registered (\"" + routeName + "\")");
 
     if (mapper.hasOwnProperty(routeName.toLowerCase()))
-        throw new Error("The given route name is already registered (\"" + routeName + "\")");
+        throw new Error(`The given route name is already registered ("${routeName}")`);
 
     for (var a in variables)
     {
@@ -161,7 +161,7 @@ myMapper.prototype.addRoute = (routeName, routeHandler, paramDict = undefined, m
 
         try { new RegExp(regex) }
         catch (ex) {
-            throw new Error("Invalid regular expression: /" + regex + "/");
+            throw new Error(`Invalid regular expression: /${regex}/`);
         }
 
         processedVariables.push({
@@ -194,7 +194,7 @@ myMapper.prototype.addRoute = (routeName, routeHandler, paramDict = undefined, m
  */
 myMapper.prototype.setNotFound = (routeHandler, paramDict = undefined) => {
     if (typeof routeHandler !== "function" && routeHandler !== null)
-        throw new Error("A function was expected for the second parameter (routeHandler). \"" + typeof routeHandler + "\" given.");
+        throw new Error(`A function was expected for the first parameter (routeHandler). "${typeof routeHandler}" given.`);
 
     if (routeHandler === null)
         notFoundHandler = null;
@@ -215,7 +215,7 @@ myMapper.prototype.setNotFound = (routeHandler, paramDict = undefined) => {
  */
 myMapper.prototype.setHeaderHandler = (routeHandler, paramDict = undefined) => {
     if (typeof routeHandler !== "function" && routeHandler !== null)
-        throw new Error("A function was expected for the second parameter (routeHandler). \"" + typeof routeHandler + "\" given.");
+        throw new Error(`A function was expected for the first parameter (routeHandler). "${typeof routeHandler}" given.`);
 
     if (routeHandler === null)
         headerHandler = null;
@@ -236,7 +236,7 @@ myMapper.prototype.setHeaderHandler = (routeHandler, paramDict = undefined) => {
  */
 myMapper.prototype.setEndOfResponse = (routeHandler, paramDict = undefined) => {
     if (typeof routeHandler !== "function" && routeHandler !== null)
-        throw new Error("A function was expected for the second parameter (routeHandler). \"" + typeof routeHandler + "\" given.");
+        throw new Error(`A function was expected for the first parameter (routeHandler). "${typeof routeHandler}" given.`);
 
     if (routeHandler === null)
         responseEndHandler = null;
@@ -257,10 +257,10 @@ myMapper.prototype.setEndOfResponse = (routeHandler, paramDict = undefined) => {
  */
 myMapper.prototype.getRoute = (routeName, context) => {
     if (typeof routeName !== "string")
-        throw new Error("A string was expected for the first parameter (routeName). \"" + typeof routeName + "\" given.");
+        throw new Error(`A string was expected for the first parameter (routeName). "${typeof routeName}" given.`);
 
     if (typeof context !== "object")
-        throw new Error("An object was expected for the second parameter (context). \"" + typeof context + "\" given.");
+        throw new Error(`An object was expected for the second parameter (context). "${typeof context}" given.`);
 
     if (!context.hasOwnProperty("request"))
         throw new Error("The second parameter (context) must have a \"request\" property.");

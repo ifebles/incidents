@@ -1,14 +1,23 @@
 /* Módulo para crear controladores */
 
-const MongoClient = require("mongodb").MongoClient;
 const qs = require("querystring");
 
 const hostName = process.env.INCIDENTS_DB_SERVER_NAME !== undefined ? process.env.INCIDENTS_DB_SERVER_NAME: "localhost";
 
-const mongoUrl = `mongodb://${hostName}:27017/`;
-const mongoDBName = "incident";
-const mongoCol_locality = "dbLocality";
-const mongoCol_incidents = "dbIncident";
+
+/**
+ * Property referencing the current instance
+ */
+var self = this;
+
+
+/**
+ * Class property for MongoDB connections
+ */
+this.myMongo = null;
+
+this.mongoCol_locality = null;
+this.mongoCol_incidents = null;
 
 
 exports.incidents = (params) => {
@@ -16,17 +25,13 @@ exports.incidents = (params) => {
     {
         case "get":
             params.__myMapper.setEndOfResponse(() => {
-                MongoClient.connect(mongoUrl, (err, db) => {
-                    if (err) throw err;
-                    
-                    var dbo = db.db(mongoDBName);
-        
-                    dbo.collection(mongoCol_incidents).find({ isArchived: false }).toArray((err, resp) => {
-                            if (err) throw err;
-                
-                            params.__context.response.end(JSON.stringify(resp));
-                            db.close();
-                        });
+                self.myMongo.find(self.mongoCol_incidents, {
+                    isArchived: false
+                }).then((obj) => {
+                    params.__context.response.end(JSON.stringify(obj));
+                }).catch((reason) => {
+                    console.log(reason);
+                    params.__context.response.end("[]");
                 });
                 
                 params.__myMapper.setEndOfResponse(null);
@@ -78,50 +83,35 @@ exports.incidents = (params) => {
                         return true;
                     }
 
-                    MongoClient.connect(mongoUrl, (err, db) => {
-                        if (err) throw err;
-            
-                        var dbo = db.db(mongoDBName);
-            
-                        try
-                        {
-                            dbo.collection(mongoCol_locality).findOne(
-                                { _id: MongoClient.connect.ObjectId(formData.locationId) },
-                                (err, resp) => {
-                                    if (err) throw err;
-                        
-                                    if (resp && isValid())
-                                        dbo.collection(mongoCol_incidents).insert({
-                                            kind: formData.kind,
-                                            locationId: formData.locationId,
-                                            happenedAt: formData.happenedAt,
-                                            isArchived: false
-                                        }, (err, resp) => {
-                                            if (err) throw err;
-
-                                            if (resp.result.ok && resp.result.n)
-                                                innerParams.__context.response.end("true");
-                                            else
-                                            {
-                                                console.log(`/POST incidents/: Values not inserted: "${JSON.stringify(formData)}". Result: "${JSON.stringify(resp.result)}"`)
-                                                innerParams.__context.response.end("false");
-                                            }
-
-                                            db.close();
-                                        });
-                                    else
-                                    {
-                                        console.log(`/POST incidents/: Invalid param(s): "${JSON.stringify(formData)}".`)
-                                        innerParams.__context.response.end("false");
-                                        db.close();
-                                    }
-                                });
-                        }
-                        catch (ex) {
-                            console.log(`/POST incidents/: Exception ocurred: "${JSON.stringify(ex)}".`)
-                            params.__context.response.end("false");
-                            db.close();
-                        }
+                    self.myMongo.findOne(self.mongoCol_locality, {
+                        _id: formData.locationId
+                    }).then((obj) => {
+                        if (obj && isValid())
+                            self.myMongo.insert(self.mongoCol_incidents, {
+                                kind: formData.kind,
+                                locationId: formData.locationId,
+                                happenedAt: formData.happenedAt,
+                                isArchived: false
+                            }).then((resp) => {
+                                if (resp.result.ok && resp.result.n)
+                                    innerParams.__context.response.end("true");
+                                else
+                                {
+                                    console.log(`/POST incidents/: Values not inserted: "${JSON.stringify(formData)}". Result: "${JSON.stringify(resp.result)}"`)
+                                    innerParams.__context.response.end("false");
+                                }
+                            }).catch((reason) => {
+                                console.log(reason);
+                                innerParams.__context.response.end("false");
+                            });
+                        else
+                            {
+                                console.log(`/POST incidents/: Invalid param(s): "${JSON.stringify(formData)}".`)
+                                innerParams.__context.response.end("false");
+                            }
+                    }).catch((reason) => {
+                        console.log(reason);
+                        innerParams.__context.response.end("false");
                     });
                 });
 
@@ -134,32 +124,20 @@ exports.incidents = (params) => {
 
 exports.archiveIncident = (params) => {
     params.__myMapper.setEndOfResponse(() => {
-        MongoClient.connect(mongoUrl, (err, db) => {
-            if (err) throw err;
-
-            var dbo = db.db(mongoDBName);
-
-            try
-            {
-                dbo.collection(mongoCol_incidents).updateOne(
-                    { _id: MongoClient.connect.ObjectId(params.__variables.incidentId) },
-                    { $set: { isArchived: true } },
-                    (err, resp) => {
-                        if (err) throw err;
-            
-                        if (resp.result.n)
-                            params.__context.response.end("true");
-                        else
-                            params.__context.response.end("false");
-
-                        db.close();
-                    });
-            }
-            catch (ex)
-            {
+        self.myMongo.updateOne(self.mongoCol_incidents, {
+            _id: params.__variables.incidentId
+        }, {
+            $set: { 
+                isArchived: true
+             }
+        }).then((resp) => {
+            if (resp.result.n)
+                params.__context.response.end("true");
+            else
                 params.__context.response.end("false");
-                db.close();
-            }
+        }).catch((reason) => {
+            console.log(reason);
+            params.__context.response.end("false");
         });
         
         params.__myMapper.setEndOfResponse(null);
@@ -168,18 +146,14 @@ exports.archiveIncident = (params) => {
 
 exports.localities = (params) => {
     params.__myMapper.setEndOfResponse(() => {
-        MongoClient.connect(mongoUrl, (err, db) => {
-            if (err) throw err;
-            
-            var dbo = db.db(mongoDBName);
-    
-            dbo.collection(mongoCol_locality).find({}).toArray((err, resp) => {
-                if (err) throw err;
-    
-                params.__context.response.end(JSON.stringify(resp));
-                db.close();
+        self.myMongo.find(self.mongoCol_locality)
+            .then((obj) => {
+                params.__context.response.end(JSON.stringify(obj));
+            })
+            .catch((reason) => {
+                console.log(reason);
+                params.__context.response.end("[]");
             });
-        });
         
         params.__myMapper.setEndOfResponse(null);
     });
@@ -187,30 +161,15 @@ exports.localities = (params) => {
 
 exports.locality = (params) => {
     params.__myMapper.setEndOfResponse(() => {
-        MongoClient.connect(mongoUrl, (err, db) => {
-            if (err) throw err;
-
-            var dbo = db.db(mongoDBName);
-
-            try
-            {
-                dbo.collection(mongoCol_locality).findOne(
-                    { _id: MongoClient.connect.ObjectId(params.__variables.localityId) },
-                    (err, resp) => {
-                        if (err) throw err;
-            
-                        params.__context.response.end(JSON.stringify(resp || {}));
-                        db.close();
-                    });
-            }
-            catch (ex)
-            {
-                params.__context.response.end(JSON.stringify({}));
-                db.close();
-            }
+        self.myMongo.findOne(self.mongoCol_locality, {
+            _id: params.__variables.localityId
+        }).then((obj) => {
+            params.__context.response.end(JSON.stringify(obj || {}));
+        }).catch((reason) => {
+            console.log(reason);
+            params.__context.response.end("{}");
         });
         
         params.__myMapper.setEndOfResponse(null);
     });
 }
-
