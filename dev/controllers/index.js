@@ -2,8 +2,6 @@
 
 const qs = require("querystring");
 
-const hostName = process.env.INCIDENTS_DB_SERVER_NAME !== undefined ? process.env.INCIDENTS_DB_SERVER_NAME: "localhost";
-
 
 /**
  * Property referencing the current instance
