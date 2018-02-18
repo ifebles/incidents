@@ -8,6 +8,12 @@ const MongoClient = require("mongodb").MongoClient;
  */
 var self;
 
+/**
+ * Full connection string
+ * @type {string}
+ */
+var fullURI;
+
 
 /**
  * Host name
@@ -34,6 +40,7 @@ var dbName;
  * Allowed setting properties
  */
 const allowedSettings = [
+    "fullURI",
     "hostName",
     "port",
     "dbName"
@@ -43,7 +50,7 @@ const allowedSettings = [
 
 /**
  * Initialize myMongo class
- * @param {{hostName: ?string, port: ?number, dbName: ?string}} settings Settings to preset for the upcomming connections
+ * @param {{fullURI: ?string, hostName: ?string, port: ?number, dbName: ?string}} settings Settings to preset for the upcomming connections
  */
 function myMongo(settings)
 {
@@ -68,7 +75,8 @@ function myMongo(settings)
 
             if (!atLeastOne)
                 throw new Error("No setting found");
-
+            
+            fullURI = settings.fullURI;
             hostName = settings.hostName ? settings.hostName: "localhost";
             port = settings.port ? settings.port: 27017;
             dbName = settings.dbName;
@@ -84,14 +92,56 @@ function myMongo(settings)
 
 
 /**
+ * Set the host name to use on upcomming connections
+ * @param {string} host Host name
+ */
+myMongo.prototype.setHostName = (host) => {
+    if (typeof host !== "string")
+        throw new Error(`A "string" was expected. "${typeof host}" given.`);
+
+    hostName = host;
+
+    return self;
+};
+
+
+/**
+ * Set the port number to use on upcomming connections
+ * @param {number} portNumber Port number
+ */
+myMongo.prototype.setPort = (portNumber) => {
+    if (typeof portNumber !== "number")
+        throw new Error(`A "number" was expected. "${typeof portNumber}" given.`);
+
+    port = portNumber;
+
+    return self;
+};
+
+
+/**
  * Set the database name to use on upcomming connections
  * @param {string} databaseName Database name
  */
 myMongo.prototype.setDbName = (databaseName) => {
-    if (typeof dbName !== "string")
+    if (typeof databaseName !== "string")
         throw new Error(`A "string" was expected. "${typeof databaseName}" given.`);
 
     dbName = databaseName;
+
+    return self;
+};
+
+
+/**
+ * Set the connection string to use on upcomming connections
+ * @param {string} connectionString Host name
+ */
+myMongo.prototype.setURI = (connectionString) => {
+    if (typeof connectionString !== "string")
+        throw new Error(`A "string" was expected. "${typeof connectionString}" given.`);
+
+    fullURI = connectionString;
 
     return self;
 };
@@ -102,7 +152,7 @@ myMongo.prototype.setDbName = (databaseName) => {
  */
 myMongo.prototype.connect = () => {
     return new Promise((resolve, reject) => {
-        MongoClient.connect(`mongodb://${hostName}:${port}/${dbName ? dbName: ""}`, (err, con) => {
+        MongoClient.connect(fullURI ? fullURI: `mongodb://${hostName}:${port}/${dbName ? dbName: ""}`, (err, con) => {
             if (err) {
                 reject(err);
                 return;
