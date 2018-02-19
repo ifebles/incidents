@@ -12,7 +12,7 @@ const fs = require("fs");
 var self;
 
 /** Mapping dictionary
- * @type {{name: { handler: function, parameters: { __context: { request: Object, response: Object }, params: ...{} }, variables: { raw: string, name: string, regex: string }, methods: string|string[] }}}
+ * @type {{name: { handler: function, parameters: { __context: { request: Object, response: Object }, params: ...{} }, variables: { raw: string, name: string, regex: string }, methods: string|string[], handlesEndOfResponse: boolean }}}
  * */
 var mapper = {};
 
@@ -82,60 +82,61 @@ myMapper.prototype.getMappedRoutes = () => {
  * Add new reference route to the project
  * @param {!string} routeName Route name (reference)
  * @param {!function} routeHandler Route handler (controller)
- * @param {*} paramDict Dictionary to send along with the "__context" property
- * @param {?...string|?string} methods Methods allowed for the requests
+ * @param {{handlerParams: {}, methods: string|...string, handlesEndOfResponse: boolean}} options Additional options for the handler
  */
-myMapper.prototype.addRoute = (routeName, routeHandler, paramDict = undefined, methods = undefined) => {
+myMapper.prototype.addRoute = (routeName, routeHandler, options = { handlerParams: null, methods: "*", handlesEndOfResponse: false }) => {
     if (typeof routeName !== "string")
         throw new Error(`A string was expected for the first parameter (routeName). "${typeof routeName}" given.`);
 
     if (typeof routeHandler !== "function")
         throw new Error(`A function was expected for the second parameter (routeHandler). "${typeof routeHandler}" given.`);
 
-    var typeOfMethods = typeof methods;
+    const allowedOptions = [
+        "handlerParams",
+        "methods",
+        "handlesEndOfResponse"
+    ];
 
-    switch(typeOfMethods)
-    {
-        case "undefined":
-        case "string":
-        case "object":
-            if (typeOfMethods === "undefined")
-                break;
-            else if (typeOfMethods === "string")
-            {
-                methods = methods.trim().toLowerCase();
+    for (var a in options)
+        if (allowedOptions.indexOf(a) === -1)
+            throw new Error(`Unknown option given: "${a}".`);
 
-                if (methods.indexOf(",") !== -1)
-                    methods = methods.split(",");                    
-                else
-                    methods = [methods];
-            }
-            else if (typeOfMethods === "object")
-            {
-                if (!methods.indexOf)
-                    throw new Error(`A string or string[] was expected for the parameter <methods>. "${typeof methods}" given.`);
+    var typeOfMethods = typeof options.methods;
 
-                methods = methods.toString().toLowerCase().split(",");
-            }
+    if (options.methods === "*" || options.methods === undefined)
+        options.methods = allowedMethods;
+    else
+        switch(typeOfMethods)
+        {
+            case "string":
+            case "object":
+                if (typeOfMethods === "string")
+                    options.methods = options.methods.trim().toLowerCase().split(",");
 
-            var filter = [];
-            var doNotExist = false;
+                else if (typeOfMethods === "object")
+                    if (!options.methods.indexOf)
+                        throw new Error(`A string or string[] was expected for the property <options.methods>. "${typeof options.methods}" given.`);
+                    else
+                        options.methods = options.methods.toString().toLowerCase().split(",");
 
-            for(var a in methods)
-                if (doNotExist = allowedMethods.indexOf(methods[a].trim()) === -1)
-                    break;
-                else if (filter.indexOf(methods[a].trim()) === -1)
-                    filter.push(methods[a].trim());
+                var filter = [];
+                var doesNotExist = false;
 
-            if (doNotExist)
-                throw new Error(`The given values for the parameter <methods> ("${methods}") are invalid. The allowed methods are "${allowedMethods}"`);
+                for(var a in options.methods)
+                    if (doesNotExist = allowedMethods.indexOf(options.methods[a].trim()) === -1)
+                        break;
+                    else if (filter.indexOf(options.methods[a].trim()) === -1)
+                        filter.push(options.methods[a].trim());
 
-            methods = filter;
-        break;
+                if (doesNotExist)
+                    throw new Error(`The given values for the property <options.methods> ("${options.methods}") are invalid. The allowed methods are "${allowedMethods}"`);
 
-        default:
-            throw new Error(`A string or string[] was expected for the parameter <methods>. "${typeof methods}" given.`);
-    }
+                options.methods = filter;
+            break;
+
+            default:
+                throw new Error(`A string or string[] was expected for the property <options.methods>. "${typeof options.methods}" given.`);
+        }
 
     // Quitar slashes iniciales, finales y los duplicados
     // routeName = routeName.replace(/(^\/+|(?<=\/)\/{1,}|\/+$)/g, "").trim().toLowerCase();
@@ -177,10 +178,11 @@ myMapper.prototype.addRoute = (routeName, routeHandler, paramDict = undefined, m
 
     mapper[routeName.toLowerCase()] = {
         handler: routeHandler,
-        parameters: paramDict,
+        parameters: options.handlerParams,
         variables: processedVariables,
-        methods: methods,
-        rawName: routeName
+        methods: options.methods,
+        rawName: routeName,
+        handlesEndOfResponse: options.handlesEndOfResponse ? true: false
     };
 
     return self;
@@ -375,7 +377,8 @@ myMapper.prototype.getRoute = (routeName, context) => {
         return false;
     }
 
-    self.lastMappedRoute = context["currentMapping"] = mapper[routeAlias];
+    self.lastMappedRoute =
+    context["currentMapping"] = mapper[routeAlias];
 
     if (!headerHandler)
     {
@@ -419,24 +422,25 @@ myMapper.prototype.getRoute = (routeName, context) => {
 
     var result = mapper[routeAlias].handler(mapper[routeAlias].parameters);
 
-    if (!responseEndHandler)
-    {
-        if (!context.response.finished)
-            context.response.end();
-    }
-    else
-    {
-        if (responseEndHandler.parameters === undefined)
-            responseEndHandler.parameters = { __context: context, __variables: variables, __myMapper: self };
+    if (!mapper[routeAlias].handlesEndOfResponse)
+        if (!responseEndHandler)
+        {
+            if (!context.response.finished)
+                context.response.end();
+        }
         else
         {
-            responseEndHandler.parameters.__context = context;
-            responseEndHandler.parameters.__variables = variables;
-            responseEndHandler.parameters.__myMapper = self;
+            if (responseEndHandler.parameters === undefined)
+                responseEndHandler.parameters = { __context: context, __variables: variables, __myMapper: self };
+            else
+            {
+                responseEndHandler.parameters.__context = context;
+                responseEndHandler.parameters.__variables = variables;
+                responseEndHandler.parameters.__myMapper = self;
+            }
+            
+            responseEndHandler.handler(responseEndHandler.parameters);
         }
-        
-        responseEndHandler.handler(responseEndHandler.parameters);
-    }
 
     // Garantizar que se retorne un booleano
     return result === undefined || (result ? true: false);

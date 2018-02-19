@@ -48,10 +48,10 @@ exports.mapper = new myMapper()
             "Content-Type": "application/json"
         });
     })
-    .addRoute('incidents', controllers.incidents, undefined, "get,post")
-    .addRoute('incidents/?{incidentId}/archive', controllers.archiveIncident, undefined, "post")
-    .addRoute('localities', controllers.localities, undefined, "get")
-    .addRoute('localities/?{localityId}', controllers.locality, undefined, "get")
+    .addRoute('incidents', controllers.incidents, { methods: "get,post", handlesEndOfResponse: true })
+    .addRoute('incidents/?{incidentId}/archive', controllers.archiveIncident, { methods: "post", handlesEndOfResponse: true })
+    .addRoute('localities', controllers.localities, { methods: "get", handlesEndOfResponse: true })
+    .addRoute('localities/?{localityId}', controllers.locality, { methods: "get", handlesEndOfResponse: true });
 
 
 /**

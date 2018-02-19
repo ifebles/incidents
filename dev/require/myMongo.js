@@ -14,7 +14,6 @@ var self;
  */
 var fullURI;
 
-
 /**
  * Host name
  * @type {string}
@@ -27,13 +26,11 @@ var hostName;
  */
 var port;
 
-
 /**
  * Database name
  * @type {string}
  */
 var dbName;
-
 
 
 /**
@@ -193,10 +190,10 @@ myMongo.prototype.insert = (collectionName, document) => {
  */
 myMongo.prototype.insertMany = (collectionName, documents) => {
     if (typeof collectionName !== "string")
-        throw new Error(`A string was expected for the first parameter (collectionName). "${typeof collectionName}"  given.`);
+        throw new Error(`A string was expected for the first parameter (collectionName). "${typeof collectionName}" given.`);
 
     if (typeof documents !== "object")
-        throw new Error(`An object was expected for the second parameter (documents). "${typeof documents}"  given.`);
+        throw new Error(`An object was expected for the second parameter (documents). "${typeof documents}" given.`);
 
     return new Promise((resolve, reject) => {
         if (dbName === undefined)
@@ -249,15 +246,27 @@ myMongo.prototype.findOne = (collectionName, filter, toShow) => {
  * @param {...{}} filter Documents (rows) to insert
  * @param {{}} toShow Fields to show in the result
  */
+myMongo.prototype.findMany = (collectionName, filter, toShow) => {
+    // Method created to keep up with the convention (one - many)
+    return self.find(collectionName, filter, toShow);
+};
+
+
+/**
+ * Find the documents mathing the given filter
+ * @param {string} collectionName Collection name
+ * @param {...{}} filter Documents (rows) to insert
+ * @param {{}} toShow Fields to show in the result
+ */
 myMongo.prototype.find = (collectionName, filter, toShow) => {
     if (typeof collectionName !== "string")
-        throw new Error(`A string was expected for the first parameter (collectionName). "${typeof collectionName}"  given.`);
+        throw new Error(`A string was expected for the first parameter (collectionName). "${typeof collectionName}" given.`);
 
     if (filter !== undefined && typeof filter !== "object")
-        throw new Error(`An object was expected for the second parameter (filter). "${typeof filter}"  given.`);
+        throw new Error(`An object was expected for the second parameter (filter). "${typeof filter}" given.`);
 
     if (toShow !== undefined && typeof toShow !== 'object')
-        throw new Error(`An object was expected for the third parameter (toShow). "${typeof toShow}"  given.`);
+        throw new Error(`An object was expected for the third parameter (toShow). "${typeof toShow}" given.`);
 
     if (filter)
         for (var a in filter)
@@ -327,13 +336,13 @@ myMongo.prototype.updateMany = (collectionName, filter, toUpdate) => {
  */
 var update = (collectionName, filter, toUpdate, mode) => {
     if (typeof collectionName !== "string")
-        throw new Error(`A string was expected for the first parameter (collectionName). "${typeof collectionName}"  given.`);
+        throw new Error(`A string was expected for the first parameter (collectionName). "${typeof collectionName}" given.`);
 
     if (typeof filter !== "object")
-        throw new Error(`An object was expected for the second parameter (filter). "${typeof filter}"  given.`);
+        throw new Error(`An object was expected for the second parameter (filter). "${typeof filter}" given.`);
 
     if (typeof toUpdate !== 'object')
-        throw new Error(`An object was expected for the third parameter (toUpdate). "${typeof toUpdate}"  given.`);
+        throw new Error(`An object was expected for the third parameter (toUpdate). "${typeof toUpdate}" given.`);
 
     for (var a in filter)
         if (a === "_id" && typeof filter[a] === "string")
@@ -410,10 +419,10 @@ myMongo.prototype.deleteMany = (collectionName, filter, toUpdate) => {
  */
 var deleteDocument = (collectionName, filter, mode) => {
     if (typeof collectionName !== "string")
-        throw new Error(`A string was expected for the first parameter (collectionName). "${typeof collectionName}"  given.`);
+        throw new Error(`A string was expected for the first parameter (collectionName). "${typeof collectionName}" given.`);
 
     if (typeof filter !== "object")
-        throw new Error(`An object was expected for the second parameter (filter). "${typeof filter}"  given.`);
+        throw new Error(`An object was expected for the second parameter (filter). "${typeof filter}" given.`);
 
     for (var a in filter)
         if (a === "_id" && typeof filter[a] === "string")
