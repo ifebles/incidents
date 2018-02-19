@@ -65,10 +65,12 @@ var initializeDB = () => {
                     { name: "Los Alcarrizos" },
                     { name: "Los Proceres" }
                 ]).then((result) => {
-                    console.log("configured");
+                    console.log("Configured");
                 }).catch((reason) => {
                     console.log(reason);
                 });
+            else
+                console.log("Connected");
         })
         .catch((reason) => {
             console.log("Trying to reconnect...");

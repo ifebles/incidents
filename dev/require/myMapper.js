@@ -255,7 +255,7 @@ myMapper.prototype.setEndOfResponse = (routeHandler, paramDict = undefined) => {
 /**
  * Call the correspondent handler (controller) based on the request
  * @param {!string} routeName Route name (reference)
- * @param {{ request: Object, response: Object }} context Current request and response
+ * @param {{ request: IncomingMessage, response: ServerResponse }} context Current request and response
  */
 myMapper.prototype.getRoute = (routeName, context) => {
     if (typeof routeName !== "string")
@@ -265,10 +265,10 @@ myMapper.prototype.getRoute = (routeName, context) => {
         throw new Error(`An object was expected for the second parameter (context). "${typeof context}" given.`);
 
     if (!context.hasOwnProperty("request"))
-        throw new Error("The second parameter (context) must have a \"request\" property.");
+        throw new Error("The second parameter (context) must have a \"request\" property of type \"IncomingMessage\".");
 
     if (!context.hasOwnProperty("response"))
-        throw new Error("The second parameter (context) must have a \"response\" property.");
+        throw new Error("The second parameter (context) must have a \"response\" property of type \"ServerResponse\".");
 
     // Quitar slashes iniciales, finales y los duplicados
     // routeName = routeName.replace(/(^\/+|(?<=\/)\/{1,}|\/+$)/g, "").trim().toLowerCase();

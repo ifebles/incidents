@@ -1,6 +1,6 @@
 /* Módulo para crear controladores */
 
-const qs = require("querystring");
+const myPost = require("../require/myPostData");
 
 
 /**
@@ -33,81 +33,72 @@ exports.incidents = (params) => {
         break;
 
         case "post":
-            var requestBody = "";
-            // var requestBody_arr = [];
-
-            params.__context.request.on("data", (data) => {
-                requestBody += data;
-                // requestBody_arr.push(data);
-            });
-
-            params.__context.request.on("end", () => {
-                var formData = qs.parse(requestBody);
-
-                // console.log(Buffer.concat(requestBody_arr).toString())
-                // console.log(requestBody_arr)
-
-                const validParams = [
-                    "kind", "locationId", "happenedAt"
-                ];
-
-                for (var a in formData)
-                    if (validParams.indexOf(a) === -1)
-                    {
-                        console.log(`/POST incidents/: Invalid param "${a}"`)
-                        params.__context.response.end("false");
-                        return;
-                    }
-
-                var isValid = () => {
-                    
-                    if (typeof formData.kind !== "string")
-                        return false;
-                    else if (["ROBBERY", "MURDER", "TRAFFIC_ACCIDENT", "SHOOTING", "ASSAULT"]
-                            .indexOf(formData.kind = formData.kind.trim().toUpperCase()) === -1)
-                        return false;
-                    else if (typeof formData.happenedAt !== "string")
-                        return false;
-                    else if (formData.happenedAt.match(/\d{1,2}\:\d{1,2}\:\d{1,2}$/) ?
-                            ((formData.happenedAt = new Date(formData.happenedAt).toJSON()) === null):
-                            ((formData.happenedAt = new Date(formData.happenedAt + " 00:00:00").toJSON()) === null))
-                        return false;
-
-                    return true;
-                }
-
-                self.myMongo.findOne(self.mongoCol_locality, {
-                    _id: formData.locationId
-                }).then((obj) => {
-                    if (obj && isValid())
-                        self.myMongo.insert(self.mongoCol_incidents, {
-                            kind: formData.kind,
-                            locationId: formData.locationId,
-                            happenedAt: formData.happenedAt,
-                            isArchived: false
-                        }).then((resp) => {
-                            if (resp.result.ok && resp.result.n)
-                                params.__context.response.end("true");
-                            else
-                            {
-                                console.log(`/POST incidents/: Values not inserted: "${JSON.stringify(formData)}". Result: "${JSON.stringify(resp.result)}"`)
-                                params.__context.response.end("false");
-                            }
-                        }).catch((reason) => {
-                            console.log(reason);
+            myPost.get(params.__context.request)
+                .then((formData) => {
+                    const validParams = [
+                        "kind", "locationId", "happenedAt"
+                    ];
+    
+                    for (var a in formData)
+                        if (validParams.indexOf(a) === -1)
+                        {
+                            console.log(`/POST incidents/: Invalid param "${a}"`)
                             params.__context.response.end("false");
-                        });
-                    else
+                            return;
+                        }
+    
+                    var isValid = () => {
+                        
+                        if (typeof formData.kind !== "string")
+                            return false;
+                        else if (["ROBBERY", "MURDER", "TRAFFIC_ACCIDENT", "SHOOTING", "ASSAULT"]
+                                .indexOf(formData.kind = formData.kind.trim().toUpperCase()) === -1)
+                            return false;
+                        else if (typeof formData.happenedAt !== "string")
+                            return false;
+                        else if (formData.happenedAt.match(/\d{1,2}\:\d{1,2}\:\d{1,2}$/) ?
+                                ((formData.happenedAt = new Date(formData.happenedAt).toJSON()) === null):
+                                ((formData.happenedAt = new Date(formData.happenedAt + " 00:00:00").toJSON()) === null))
+                            return false;
+    
+                        return true;
+                    }
+    
+                    self.myMongo.findOne(self.mongoCol_locality, {
+                        _id: formData.locationId
+                    }).then((obj) => {
+                        if (obj && isValid())
+                            self.myMongo.insert(self.mongoCol_incidents, {
+                                kind: formData.kind,
+                                locationId: formData.locationId,
+                                happenedAt: formData.happenedAt,
+                                isArchived: false
+                            }).then((resp) => {
+                                if (resp.result.ok && resp.result.n)
+                                    params.__context.response.end("true");
+                                else
+                                {
+                                    console.log(`/POST incidents/: Values not inserted: "${JSON.stringify(formData)}". Result: "${JSON.stringify(resp.result)}"`)
+                                    params.__context.response.end("false");
+                                }
+                            }).catch((reason) => {
+                                console.log(reason);
+                                params.__context.response.end("false");
+                            });
+                        else
                         {
                             console.log(`/POST incidents/: Invalid param(s): "${JSON.stringify(formData)}".`)
                             params.__context.response.end("false");
                         }
-                }).catch((reason) => {
+                    }).catch((reason) => {
+                        console.log(reason);
+                        params.__context.response.end("false");
+                    });
+                })
+                .catch((reason) => {
                     console.log(reason);
                     params.__context.response.end("false");
                 });
-            });
-            
         break;
     }
 }
