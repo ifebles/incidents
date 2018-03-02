@@ -12,7 +12,7 @@ const fs = require("fs");
 var self;
 
 /** Mapping dictionary
- * @type {{name: { handler: function, parameters: { __context: { request: Object, response: Object }, params: ...{} }, variables: { raw: string, name: string, regex: string }, methods: string|string[], handlesEndOfResponse: boolean }}}
+ * @type {{[name: string]: { handler: function, parameters: { __context: { request: Object, response: Object }, params: ...{} }, variables: { raw: string, name: string, regex: string }, methods: string|string[], handlesEndOfResponse: boolean }}}
  * */
 var mapper = {};
 
@@ -31,6 +31,29 @@ var headerHandler = null;
  */
 var responseEndHandler = null;
 
+/**
+ * Supported application types
+ */
+const applicationTypes = {
+    [Symbol.iterator]: function*() {
+        for (let a in this)
+            yield this[a];
+    },
+    WebSite: "website",
+    WebAPI: "webapi"
+};
+
+/**
+ * Application type assigned for the current instance
+ * @type {string}
+ */
+var instanceType;
+
+/**
+ * Assign response header before the reponse handler is called
+ * @type {boolean}
+ */
+var setHeaderBeforeHandler;
 
 /**
  * Methods allowed for the incoming requests
@@ -56,19 +79,38 @@ const allowedMethods = [
 
 /**
  * Class constructor
+ * @param {string} applicationType Specify the application type for the mapper instance (e.g. "WebSite/WebAPI")
  * @property {boolean} easyMediaMapping - Load media from the given folder as any media extension is requested
  * @property {string} imageDirectory - Root directory to load media from (default: "./public/images/")
  * @property {boolean} showhandlersContentOnStatusCodeNotOK - Show the content of the specified handler when the web response status code is not OK (>=400)
  * @property {*} lastMappedRoute - Gets the last routed request
  */
-function myMapper() {
+function myMapper(applicationType = "WebSite") {
     this.easyMediaMapping = true;
     this.imageDirectory = "./public/images/";
     this.showhandlersContentOnStatusCodeNotOK = false;
     this.lastMappedRoute = null;
     self = this;
+
+    if (typeof applicationType !== "string")
+        throw new Error(`Invalid "Application Type" specified: a string was expected ("${typeof applicationType}" was given).`);
+
+    if ([...applicationTypes].indexOf((applicationType = applicationType.trim()).toLowerCase()) === -1)
+        throw new Error(`Unsuported application type "${applicationType}". The supported types are "${applicationTypes}".`);
+
+    instanceType = applicationType.toLowerCase();
+
+    if (instanceType === applicationTypes.WebSite)
+        setHeaderBeforeHandler = true;
+    else if (instanceType === applicationTypes.WebAPI)
+        setHeaderBeforeHandler = false;
 }
 
+
+myMapper.prototype.setHeaderBeforeHandler = (value) => {
+    setHeaderBeforeHandler = value || value === undefined ? true: false;
+    return self;
+};
 
 /**
  * Retrieve all the mapped routes
@@ -81,7 +123,7 @@ myMapper.prototype.getMappedRoutes = () => {
 /**
  * Add new reference route to the project
  * @param {!string} routeName Route name (reference)
- * @param {!function} routeHandler Route handler (controller)
+ * @param {!function} routeHandler Route handler (controller). If the application type specified is "WebAPI", the return must be a Promise
  * @param {{handlerParams: {}, methods: string|...string, handlesEndOfResponse: boolean}} options Additional options for the handler
  */
 myMapper.prototype.addRoute = (routeName, routeHandler, options = { handlerParams: null, methods: "*", handlesEndOfResponse: false }) => {
@@ -90,7 +132,7 @@ myMapper.prototype.addRoute = (routeName, routeHandler, options = { handlerParam
 
     if (typeof routeHandler !== "function")
         throw new Error(`A function was expected for the second parameter (routeHandler). "${typeof routeHandler}" given.`);
-
+    
     const allowedOptions = [
         "handlerParams",
         "methods",
@@ -383,47 +425,128 @@ myMapper.prototype.getRoute = (routeName, context) => {
     self.lastMappedRoute =
     context["currentMapping"] = mapper[routeAlias];
 
-    if (!headerHandler)
-    {
-        var status = 200;
-        
-        if (mapper[routeAlias].methods !== undefined && mapper[routeAlias].methods.indexOf(context.request.method.toLowerCase()) === -1)
-            status = 405; // Not Allowed
-
-        context.response.writeHead(status, {
-            'Content-Type': 'text/html'
-        });
-    }
-    else
-    {
-        injectValues(headerHandler);
-        headerHandler.handler(headerHandler.parameters);
-    }
-
-    if (context.response.statusCode >= 400 && self.showhandlersContentOnStatusCodeNotOK === false)
-    {
-        context.response.end();
-        return false;
-    }
-
     injectValues(mapper[routeAlias]);
 
-    var result = mapper[routeAlias].handler(mapper[routeAlias].parameters);
-
-    if (!mapper[routeAlias].handlesEndOfResponse)
-        if (!responseEndHandler)
+    if (instanceType === applicationTypes.WebSite)
+    {
+        if (!headerHandler)
         {
-            if (!context.response.finished)
-                context.response.end();
+            var status = 200;
+            
+            if (mapper[routeAlias].methods !== undefined && mapper[routeAlias].methods.indexOf(context.request.method.toLowerCase()) === -1)
+                status = 405; // Not Allowed
+
+            context.response.writeHead(status, {
+                'Content-Type': 'text/html'
+            });
         }
         else
         {
-            injectValues(responseEndHandler);
-            responseEndHandler.handler(responseEndHandler.parameters);
+            injectValues(headerHandler);
+            headerHandler.handler(headerHandler.parameters);
         }
 
-    // Garantizar que se retorne un booleano
-    return result === undefined || (result ? true: false);
+        if (context.response.statusCode >= 400 && self.showhandlersContentOnStatusCodeNotOK === false)
+        {
+            context.response.end();
+            return false;
+        }
+        
+        var result = mapper[routeAlias].handler(mapper[routeAlias].parameters);
+    
+        if (!mapper[routeAlias].handlesEndOfResponse)
+            if (!responseEndHandler)
+            {
+                if (!context.response.finished)
+                    context.response.end();
+            }
+            else
+            {
+                injectValues(responseEndHandler);
+                responseEndHandler.handler(responseEndHandler.parameters);
+            }
+    
+        // Garantizar que se retorne un booleano
+        return result === undefined || (result ? true: false);
+    }
+    else if (instanceType === applicationTypes.WebAPI)
+    {
+        if (setHeaderBeforeHandler)
+            if (!headerHandler)
+            {
+                var status = 200;
+                
+                if (mapper[routeAlias].methods !== undefined && mapper[routeAlias].methods.indexOf(context.request.method.toLowerCase()) === -1)
+                    status = 405; // Not Allowed
+    
+                context.response.writeHead(status, {
+                    'Content-Type': 'application/json'
+                });
+            }
+            else
+            {
+                injectValues(headerHandler);
+                headerHandler.handler(headerHandler.parameters);
+            }
+
+        mapper[routeAlias].handler(mapper[routeAlias].parameters)
+            .then((result) => {
+                if (!setHeaderBeforeHandler)
+                    if (!headerHandler)
+                    {
+                        var status = 200;
+                        
+                        if (mapper[routeAlias].methods !== undefined && mapper[routeAlias].methods.indexOf(context.request.method.toLowerCase()) === -1)
+                            status = 405; // Not Allowed
+            
+                        context.response.writeHead(status, {
+                            'Content-Type': 'application/json'
+                        });
+                    }
+                    else
+                    {
+                        injectValues(headerHandler);
+                        headerHandler.handler(headerHandler.parameters);
+                    }
+                
+                if (!context.response.finished)
+                {
+                    if (typeof result === 'string')
+                        try {
+                            JSON.parse(result);
+                        }
+                        catch (ex) {
+                            result = JSON.stringify(result);
+                        }
+                    else if (result !== undefined)
+                        result = JSON.stringify(result);
+                    
+                    if (!responseEndHandler)
+                        context.response.end(result);
+                    else
+                    {
+                        if (result)
+                            context.response.write(result);
+
+                        injectValues(responseEndHandler);
+                        responseEndHandler.handler(responseEndHandler.parameters);
+                    }
+                }
+                else if (responseEndHandler)
+                {
+                    injectValues(responseEndHandler);
+                    responseEndHandler.handler(responseEndHandler.parameters);
+                }
+            })
+            .catch((reason) => {
+                console.log("Promise catch:", reason);
+
+                if (!context.response.finished)
+                    context.response.end();
+            });
+    }
+
+    return true;
 };
 
 
