@@ -134,22 +134,6 @@ exports.archiveIncident = (params) => {
         console.log(reason);
         serverResponse.end(JSON.stringify(false));
     });
-
-    // self.myMongo.updateOne(self.mongoCol_incidents, {
-    //     _id: params.__variables.incidentId
-    // }, {
-    //     $set: { 
-    //         isArchived: true
-    //      }
-    // }).then((resp) => {
-    //     if (resp.result.n)
-    //         serverResponse.end(JSON.stringify(true));
-    //     else
-    //         serverResponse.end(JSON.stringify(false));
-    // }).catch((reason) => {
-    //     console.log(reason);
-    //     serverResponse.end(JSON.stringify(false));
-    // });
 }
 
 exports.localities = (params) => {
