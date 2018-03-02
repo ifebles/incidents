@@ -19,21 +19,24 @@ this.mongoCol_incidents = null;
 
 
 exports.incidents = (params) => {
-    switch (params.__context.request.method.toLowerCase())
+    let serverResponse = params.__context.response;
+    let serverRequest = params.__context.request;
+
+    switch (serverRequest.method.toLowerCase())
     {
         case "get":
             self.myMongo.find(self.mongoCol_incidents, {
                 isArchived: false
             }).then((obj) => {
-                params.__context.response.end(JSON.stringify(obj));
+                serverResponse.end(JSON.stringify(obj));
             }).catch((reason) => {
                 console.log(reason);
-                params.__context.response.end("[]");
+                serverResponse.end(JSON.stringify([]));
             });
         break;
 
         case "post":
-            myPost.get(params.__context.request)
+            myPost.get(serverRequest)
                 .then((formData) => {
                     const validParams = [
                         "kind", "locationId", "happenedAt"
@@ -43,7 +46,7 @@ exports.incidents = (params) => {
                         if (validParams.indexOf(a) === -1)
                         {
                             console.log(`/POST incidents/: Invalid param "${a}"`)
-                            params.__context.response.end("false");
+                            serverResponse.end(JSON.stringify(false));
                             return;
                         }
     
@@ -75,70 +78,102 @@ exports.incidents = (params) => {
                                 isArchived: false
                             }).then((resp) => {
                                 if (resp.result.ok && resp.result.n)
-                                    params.__context.response.end("true");
+                                    serverResponse.end(JSON.stringify(true));
                                 else
                                 {
                                     console.log(`/POST incidents/: Values not inserted: "${JSON.stringify(formData)}". Result: "${JSON.stringify(resp.result)}"`)
-                                    params.__context.response.end("false");
+                                    serverResponse.end(JSON.stringify(false));
                                 }
                             }).catch((reason) => {
                                 console.log(reason);
-                                params.__context.response.end("false");
+                                serverResponse.end(JSON.stringify(false));
                             });
                         else
                         {
                             console.log(`/POST incidents/: Invalid param(s): "${JSON.stringify(formData)}".`)
-                            params.__context.response.end("false");
+                            serverResponse.end(JSON.stringify(false));
                         }
                     }).catch((reason) => {
                         console.log(reason);
-                        params.__context.response.end("false");
+                        serverResponse.end(JSON.stringify(false));
                     });
                 })
                 .catch((reason) => {
                     console.log(reason);
-                    params.__context.response.end("false");
+                    serverResponse.end(JSON.stringify(false));
                 });
         break;
     }
 }
 
 exports.archiveIncident = (params) => {
-    self.myMongo.updateOne(self.mongoCol_incidents, {
-        _id: params.__variables.incidentId
-    }, {
-        $set: { 
-            isArchived: true
-         }
+    let serverResponse = params.__context.response;
+
+    self.myMongo.findOne(self.mongoCol_incidents, {
+        _id: params.__variables.incidentId,
+        isArchived: false
+    }).then((resultObj) => {
+        if (resultObj === null)
+            return {
+                result: false
+            };
+        else
+            return self.myMongo.updateOne(self.mongoCol_incidents, {
+                _id: params.__variables.incidentId
+            }, {
+                $set: {
+                    isArchived: true
+                    }
+            });
     }).then((resp) => {
         if (resp.result.n)
-            params.__context.response.end("true");
+            serverResponse.end(JSON.stringify(true));
         else
-            params.__context.response.end("false");
+            serverResponse.end(JSON.stringify(false));
     }).catch((reason) => {
         console.log(reason);
-        params.__context.response.end("false");
+        serverResponse.end(JSON.stringify(false));
     });
+
+    // self.myMongo.updateOne(self.mongoCol_incidents, {
+    //     _id: params.__variables.incidentId
+    // }, {
+    //     $set: { 
+    //         isArchived: true
+    //      }
+    // }).then((resp) => {
+    //     if (resp.result.n)
+    //         serverResponse.end(JSON.stringify(true));
+    //     else
+    //         serverResponse.end(JSON.stringify(false));
+    // }).catch((reason) => {
+    //     console.log(reason);
+    //     serverResponse.end(JSON.stringify(false));
+    // });
 }
 
 exports.localities = (params) => {
+    let serverResponse = params.__context.response;
+
     self.myMongo.find(self.mongoCol_locality)
     .then((obj) => {
-        params.__context.response.end(JSON.stringify(obj));
+        serverResponse.end(JSON.stringify(obj));
     })
     .catch((reason) => {
         console.log(reason);
-        params.__context.response.end("[]");
+        serverResponse.end(JSON.stringify([]));
     });
 }
 
 exports.locality = (params) => {
+    let serverResponse = params.__context.response;
+
     self.myMongo.findOne(self.mongoCol_locality, {
         _id: params.__variables.localityId
     }).then((obj) => {
-        params.__context.response.end(JSON.stringify(obj || {}));
+        serverResponse.end(JSON.stringify(obj || {}));
     }).catch((reason) => {
         console.log(reason);
-        params.__context.response.end("{}");
+        serverResponse.end(JSON.stringify({}));
     });
 }

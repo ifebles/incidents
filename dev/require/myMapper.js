@@ -270,7 +270,7 @@ myMapper.prototype.getRoute = (routeName, context) => {
     if (!context.hasOwnProperty("response"))
         throw new Error("The second parameter (context) must have a \"response\" property of type \"ServerResponse\".");
 
-    // Quitar slashes iniciales, finales y los duplicados
+    // Remove initial, ending and repeated slashes
     // routeName = routeName.replace(/(^\/+|(?<=\/)\/{1,}|\/+$)/g, "").trim().toLowerCase();
     routeName = decodeURI(routeName.replace(/\/{1,}/g, "/").replace(/(^\/+|\/+$)/g, "").trim());
     
@@ -353,6 +353,17 @@ myMapper.prototype.getRoute = (routeName, context) => {
             }
     }
 
+    const injectValues = (actionHandler) => {
+        if (actionHandler.parameters === undefined)
+            actionHandler.parameters = { __context: context, __variables: variables, __myMapper: self };
+        else
+        {
+            actionHandler.parameters.__context = context;
+            actionHandler.parameters.__variables = variables;
+            actionHandler.parameters.__myMapper = self;
+        }
+    };
+
     if (!exists)
     {
         context.response.writeHead(404, {
@@ -361,15 +372,7 @@ myMapper.prototype.getRoute = (routeName, context) => {
 
         if (notFoundHandler)
         {
-            if (notFoundHandler.parameters === undefined)
-                notFoundHandler.parameters = { __context: context, __variables: variables, __myMapper: self };
-            else
-            {
-                notFoundHandler.parameters.__context = context;
-                notFoundHandler.parameters.__variables = variables;
-                notFoundHandler.parameters.__myMapper = self;
-            }
-
+            injectValues(notFoundHandler);
             notFoundHandler.handler(notFoundHandler.parameters);
         }
 
@@ -393,15 +396,7 @@ myMapper.prototype.getRoute = (routeName, context) => {
     }
     else
     {
-        if (headerHandler.parameters === undefined)
-            headerHandler.parameters = { __context: context, __variables: variables, __myMapper: self };
-        else
-        {
-            headerHandler.parameters.__context = context;
-            headerHandler.parameters.__variables = variables;
-            headerHandler.parameters.__myMapper = self;
-        }
-            
+        injectValues(headerHandler);
         headerHandler.handler(headerHandler.parameters);
     }
 
@@ -411,14 +406,7 @@ myMapper.prototype.getRoute = (routeName, context) => {
         return false;
     }
 
-    if (mapper[routeAlias].parameters === undefined)
-        mapper[routeAlias].parameters = { __context: context, __variables: variables, __myMapper: self };
-    else
-    {
-        mapper[routeAlias].parameters.__context = context;
-        mapper[routeAlias].parameters.__variables = variables;
-        mapper[routeAlias].parameters.__myMapper = self;
-    }
+    injectValues(mapper[routeAlias]);
 
     var result = mapper[routeAlias].handler(mapper[routeAlias].parameters);
 
@@ -430,15 +418,7 @@ myMapper.prototype.getRoute = (routeName, context) => {
         }
         else
         {
-            if (responseEndHandler.parameters === undefined)
-                responseEndHandler.parameters = { __context: context, __variables: variables, __myMapper: self };
-            else
-            {
-                responseEndHandler.parameters.__context = context;
-                responseEndHandler.parameters.__variables = variables;
-                responseEndHandler.parameters.__myMapper = self;
-            }
-            
+            injectValues(responseEndHandler);
             responseEndHandler.handler(responseEndHandler.parameters);
         }
 
