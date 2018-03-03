@@ -35,23 +35,11 @@ controllers.mongoCol_incidents = mongoCol_incidents;
 /**
  * Mapper object to reference the whole project
  */
-exports.mapper = new myMapper()
-    .setHeaderHandler((params) => {
-        var status = 200;
-
-        var methods = params.__context.currentMapping.methods;
-
-        if (methods !== undefined && methods.indexOf(params.__context.request.method.toLowerCase()) === -1)
-            status = 405; // Not Allowed
-
-        params.__context.response.writeHead(status, {
-            "Content-Type": "application/json"
-        });
-    })
-    .addRoute('incidents', controllers.incidents, { methods: "get,post", handlesEndOfResponse: true })
-    .addRoute('incidents/?{incidentId}/archive', controllers.archiveIncident, { methods: "post", handlesEndOfResponse: true })
-    .addRoute('localities', controllers.localities, { methods: "get", handlesEndOfResponse: true })
-    .addRoute('localities/?{localityId}', controllers.locality, { methods: "get", handlesEndOfResponse: true });
+exports.mapper = new myMapper("webapi")
+    .addRoute('incidents', controllers.incidents, { methods: "get,post" })
+    .addRoute('incidents/?{incidentId}/archive', controllers.archiveIncident, { methods: "post" })
+    .addRoute('localities', controllers.localities, { methods: "get" })
+    .addRoute('localities/?{localityId}', controllers.locality, { methods: "get" });
 
 
 /**

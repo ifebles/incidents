@@ -96,7 +96,7 @@ function myMapper(applicationType = "WebSite") {
         throw new Error(`Invalid "Application Type" specified: a string was expected ("${typeof applicationType}" was given).`);
 
     if ([...applicationTypes].indexOf((applicationType = applicationType.trim()).toLowerCase()) === -1)
-        throw new Error(`Unsuported application type "${applicationType}". The supported types are "${applicationTypes}".`);
+        throw new Error(`Unsuported application type "${applicationType}". The supported types are "${[...applicationTypes]}".`);
 
     instanceType = applicationType.toLowerCase();
 
@@ -472,6 +472,10 @@ myMapper.prototype.getRoute = (routeName, context) => {
     else if (instanceType === applicationTypes.WebAPI)
     {
         if (setHeaderBeforeHandler)
+        {
+            if (context.response.headersSent)
+                console.error(`Headers already sent. Skipping header handler for this request: "/${context.request.method} ${context.request.headers["host"]}${context.request.url}".`);
+
             if (!headerHandler)
             {
                 var status = 200;
@@ -488,62 +492,76 @@ myMapper.prototype.getRoute = (routeName, context) => {
                 injectValues(headerHandler);
                 headerHandler.handler(headerHandler.parameters);
             }
+        }
 
-        mapper[routeAlias].handler(mapper[routeAlias].parameters)
-            .then((result) => {
-                if (!setHeaderBeforeHandler)
-                    if (!headerHandler)
+        const handlerResult = mapper[routeAlias].handler(mapper[routeAlias].parameters);
+
+        if (handlerResult === undefined || !handlerResult.then)
+            console.error(`A Promise was expected to be returned from the handler. Skipping the subsequent handlers for this request: "/${context.request.method} ${context.request.headers["host"]}${context.request.url}".`);
+        else
+            handlerResult
+                .then((result) => {
+                    if (!setHeaderBeforeHandler)
                     {
-                        var status = 200;
+                        if (context.response.headersSent)
+                            console.error(`Headers already sent. Skipping header handler for this request: "/${context.request.method} ${context.request.headers["host"]}${context.request.url}".`);
                         
-                        if (mapper[routeAlias].methods !== undefined && mapper[routeAlias].methods.indexOf(context.request.method.toLowerCase()) === -1)
-                            status = 405; // Not Allowed
-            
-                        context.response.writeHead(status, {
-                            'Content-Type': 'application/json'
-                        });
-                    }
-                    else
-                    {
-                        injectValues(headerHandler);
-                        headerHandler.handler(headerHandler.parameters);
-                    }
+                        if (!headerHandler)
+                        {
+                            var status = 200;
+                            
+                            if (mapper[routeAlias].methods !== undefined && mapper[routeAlias].methods.indexOf(context.request.method.toLowerCase()) === -1)
+                                status = 405; // Not Allowed
                 
-                if (!context.response.finished)
-                {
-                    if (typeof result === 'string')
-                        try {
-                            JSON.parse(result);
+                            context.response.writeHead(status, {
+                                'Content-Type': 'application/json'
+                            });
                         }
-                        catch (ex) {
-                            result = JSON.stringify(result);
+                        else
+                        {
+                            injectValues(headerHandler);
+                            headerHandler.handler(headerHandler.parameters);
                         }
-                    else if (result !== undefined)
-                        result = JSON.stringify(result);
-                    
-                    if (!responseEndHandler)
-                        context.response.end(result);
-                    else
-                    {
-                        if (result)
-                            context.response.write(result);
 
+                        if (context.response.statusCode >= 400 && self.showhandlersContentOnStatusCodeNotOK === false)
+                            context.response.end();
+                    }
+                    
+                    if (!context.response.finished)
+                    {
+                        if (typeof result === 'string')
+                            try {
+                                JSON.parse(result);
+                            }
+                            catch (ex) {
+                                result = JSON.stringify(result);
+                            }
+                        else if (result !== undefined)
+                            result = JSON.stringify(result);
+                        
+                        if (!responseEndHandler)
+                            context.response.end(result);
+                        else
+                        {
+                            if (result)
+                                context.response.write(result);
+
+                            injectValues(responseEndHandler);
+                            responseEndHandler.handler(responseEndHandler.parameters);
+                        }
+                    }
+                    else if (responseEndHandler)
+                    {
                         injectValues(responseEndHandler);
                         responseEndHandler.handler(responseEndHandler.parameters);
                     }
-                }
-                else if (responseEndHandler)
-                {
-                    injectValues(responseEndHandler);
-                    responseEndHandler.handler(responseEndHandler.parameters);
-                }
-            })
-            .catch((reason) => {
-                console.log("Promise catch:", reason);
+                })
+                .catch((reason) => {
+                    console.log("Promise catch:", reason);
 
-                if (!context.response.finished)
-                    context.response.end();
-            });
+                    if (!context.response.finished)
+                        context.response.end();
+                });
     }
 
     return true;
