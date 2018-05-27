@@ -1,19 +1,22 @@
 
-const myMapper = require('./require/myMapper');
-const myMongoClass = require("./require/myMongo");
+const gomodMapper = require('./require/gomod-mapper');
+const gomodMongo = require("./require/gomod-mongo");
 const controllers = require('./controllers');
 
 
 /**
  * Hostname of the database server 
  */
-const hostName = process.env.INCIDENTS_DB_SERVER_NAME !== undefined ? process.env.INCIDENTS_DB_SERVER_NAME: "localhost";
+const hostName = process.env.INCIDENTS_DB_SERVER_NAME || "localhost";
 
+const fullURI = process.env.INCIDENTS_MONGO_URI;
 
 /**
  * Class' instace for my MongoDB handler  
  */
-const myMongo = new myMongoClass({
+const myMongo = new gomodMongo({
+    // If assigned, it will be considered over the other configurations
+    fullURI: fullURI,
     hostName: hostName,
     dbName: "incident"
 });
@@ -35,7 +38,7 @@ controllers.mongoCol_incidents = mongoCol_incidents;
 /**
  * Mapper object to reference the whole project
  */
-exports.mapper = new myMapper("webapi")
+exports.mapper = new gomodMapper("webapi")
     .addRoute('incidents', controllers.incidents, { methods: "get,post" })
     .addRoute('incidents/?{incidentId}/archive', controllers.archiveIncident, { methods: "post" })
     .addRoute('localities', controllers.localities, { methods: "get" })

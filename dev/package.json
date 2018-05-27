@@ -1,10 +1,10 @@
 {
   "name": "incidents",
-  "version": "1.2.1",
-  "description": "pre-interview",
+  "version": "1.3.1",
+  "description": "Playground",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "if [ -f config.sh  ]; then /bin/bash config.sh; else node index.js; fi;",
     "test": "ava"
   },
   "repository": {
