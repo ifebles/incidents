@@ -494,7 +494,19 @@ myMapper.prototype.getRoute = (routeName, context) => {
             }
         }
 
-        const handlerResult = mapper[routeAlias].handler(mapper[routeAlias].parameters);
+        if (mapper[routeAlias].methods.indexOf(context.request.method.toLowerCase()) === -1)
+        {
+            context.response.writeHead(405, {
+                'Content-Type': 'application/json'
+            });
+
+            context.response.end();
+        }
+
+        let handlerResult;
+
+        if (!context.response.headersSent)
+            handlerResult = mapper[routeAlias].handler(mapper[routeAlias].parameters);
 
         if (handlerResult === undefined || !handlerResult.then)
             console.error(`A Promise was expected to be returned from the handler. Skipping the subsequent handlers for this request: "/${context.request.method} ${context.request.headers["host"]}${context.request.url}".`);
