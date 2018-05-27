@@ -188,6 +188,20 @@ describe("Incidents module responses", () => {
                 done();
             });
     });
+
+    it("/POST /incidents/ -> Should return \"false\"", (done: MochaDone) => {
+        chai.request(serverURL)
+            .post("/incidents")
+            .end((err: any, resp: any) => {
+                expect(err).to.be.null;
+                expect(resp).to.not.be.null;
+                expect(resp.body).to.not.be.null;
+                chai.assert.isTrue(typeof resp.body === typeof true)
+                expect(resp.body).to.be.equal(false);
+
+                done();
+            });
+    });
 });
 
 describe("Localities module responses", () => {

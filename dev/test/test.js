@@ -156,6 +156,18 @@ mocha_1.describe("Incidents module responses", function () {
             done();
         });
     });
+    mocha_1.it("/POST /incidents/ -> Should return \"false\"", function (done) {
+        chai.request(serverURL)
+            .post("/incidents")
+            .end(function (err, resp) {
+            expect(err).to.be.null;
+            expect(resp).to.not.be.null;
+            expect(resp.body).to.not.be.null;
+            chai.assert.isTrue(typeof resp.body === typeof true);
+            expect(resp.body).to.be.equal(false);
+            done();
+        });
+    });
 });
 mocha_1.describe("Localities module responses", function () {
     mocha_1.it("/GET /localities/ -> Should return an array", function (done) {
