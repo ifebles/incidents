@@ -1,13 +1,13 @@
-
-const qs = require("querystring");
+import qs, { ParsedUrlQuery } from "querystring";
+import { IncomingMessage } from "http";
 
 
 /**
  * Get the posted values from the request
- * @param {IncomingMessage} request Current request made to the server 
+ * @param request Current request made to the server 
  */
-exports.get = (request) => {
-    var requestBody = "";
+export function get (request: IncomingMessage): Promise<ParsedUrlQuery> {
+    let requestBody = "";
     // var requestBody_arr = [];
 
     return new Promise((resolve, reject) => {
