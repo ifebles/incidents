@@ -87,7 +87,7 @@ describe("System response status", () => {
             });
     });
 
-    it("/GET /incidents/{value}/archive/ -> Should return 200 without exceptions", (done: MochaDone) => {
+    it("/POST /incidents/{value}/archive/ -> Should return 200 without exceptions", (done: MochaDone) => {
         chai.request(serverURL)
             .post("/incidents/test/archive")
             .end((err, resp) => {
@@ -226,7 +226,7 @@ describe("Incidents module responses", () => {
             .end((err, resp) => {
                 expect(err).to.be.null;
                 expect(resp).to.not.be.null;
-                expect(resp.body).to.not.be.null;
+                // expect(resp.body).to.not.be.null; -- It can be null
                 expect(resp.body).to.be.instanceof(Array);
                 expect(resp.body).length.to.be.gte(0);
                 expect(resp.body[0]).to.have.property("_id").to.not.be.null;

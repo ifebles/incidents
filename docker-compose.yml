@@ -13,4 +13,6 @@ services:
     links:
      - mongo
     environment:
-     - INCIDENTS_DB_SERVER_NAME=0b218c69f692
+     - INCIDENTS_DB_SERVER_NAME=dc45a2ad1595
+     - INCIDENTS_MONGO_URI=
+     - INCIDENTS_RETRY_LIMIT=10
