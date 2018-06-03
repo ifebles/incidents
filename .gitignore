@@ -2,4 +2,5 @@ dev/node_modules
 dev/config.sh
 .vscode
 *.js
+*.map
 !dev/dist/index.js

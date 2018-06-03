@@ -1,4 +1,5 @@
-import qs, { ParsedUrlQuery } from "querystring";
+import * as qs from "querystring";
+import { ParsedUrlQuery } from "querystring";
 import { IncomingMessage } from "http";
 
 
