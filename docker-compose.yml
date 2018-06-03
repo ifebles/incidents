@@ -5,6 +5,7 @@ services:
     image: 'mongo:latest'
     ports:
      - "27017:27017"
+    hostname: 'incident_MongoServer'
 
   app:
     build: ./dev/
@@ -13,6 +14,6 @@ services:
     links:
      - mongo
     environment:
-     - INCIDENTS_DB_SERVER_NAME=dc45a2ad1595
+     - INCIDENTS_DB_SERVER_NAME=incident_MongoServer
      - INCIDENTS_MONGO_URI=
      - INCIDENTS_RETRY_LIMIT=10

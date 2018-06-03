@@ -76,7 +76,7 @@ describe("System response status", () => {
             });
     });
 
-    it("/GET /incidents/{value}/archive/ -> Should return 405 without exceptions", (done: MochaDone) => {
+    it("/GET /incidents/{bad-value}/archive/ -> Should return 405 without exceptions", (done: MochaDone) => {
         chai.request(serverURL)
             .get("/incidents/test/archive")
             .end((err, resp) => {
@@ -87,7 +87,7 @@ describe("System response status", () => {
             });
     });
 
-    it("/POST /incidents/{value}/archive/ -> Should return 200 without exceptions", (done: MochaDone) => {
+    it("/POST /incidents/{bad-value}/archive/ -> Should return 200 without exceptions", (done: MochaDone) => {
         chai.request(serverURL)
             .post("/incidents/test/archive")
             .end((err, resp) => {
@@ -98,7 +98,7 @@ describe("System response status", () => {
             });
     });
 
-    it("/PUT /incidents/{value}/archive/ -> Should return 405 without exceptions", (done: MochaDone) => {
+    it("/PUT /incidents/{bad-value}/archive/ -> Should return 405 without exceptions", (done: MochaDone) => {
         chai.request(serverURL)
             .put("/incidents/test/archive")
             .end((err, resp) => {
@@ -142,7 +142,7 @@ describe("System response status", () => {
             });
     });
 
-    it("/GET /localities/{value}/ -> Should return 200 without exceptions", (done: MochaDone) => {
+    it("/GET /localities/{bad-value}/ -> Should return 200 without exceptions", (done: MochaDone) => {
         chai.request(serverURL)
             .get("/localities/testvalue")
             .end((err, resp) => {
@@ -153,7 +153,7 @@ describe("System response status", () => {
             });
     });
 
-    it("/POST /localities/{value}/ -> Should return 405 without exceptions", (done: MochaDone) => {
+    it("/POST /localities/{bad-value}/ -> Should return 405 without exceptions", (done: MochaDone) => {
         chai.request(serverURL)
             .post("/localities/testvalue")
             .end((err, resp) => {
@@ -164,7 +164,7 @@ describe("System response status", () => {
             });
     });
 
-    it("/PUT /localities/{value}/ -> Should return 405 without exceptions", (done: MochaDone) => {
+    it("/PUT /localities/{bad-value}/ -> Should return 405 without exceptions", (done: MochaDone) => {
         chai.request(serverURL)
             .put("/localities/testvalue")
             .end((err, resp) => {
