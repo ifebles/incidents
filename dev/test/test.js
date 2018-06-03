@@ -159,6 +159,18 @@ mocha_1.describe("Localities module responses", function () {
             done();
         });
     });
+    mocha_1.it("/GET /localities/{bad-value}/ -> Should return an empty object", function (done) {
+        chai.request(serverURL)
+            .get("/localities/badvalue")
+            .end(function (err, resp) {
+            expect(err).to.be.null;
+            expect(resp).to.not.be.null;
+            expect(resp.body).to.not.be.null;
+            expect(resp.body).to.be.instanceof(Object);
+            expect(resp.body).to.be.empty;
+            done();
+        });
+    });
     mocha_1.it("/GET /localities/{value}/ -> Should return a valid object", function (done) {
         node_fetch_1.default(serverURL + "/localities")
             .then(function (response) { return response.json(); })
@@ -169,6 +181,7 @@ mocha_1.describe("Localities module responses", function () {
                 expect(err).to.be.null;
                 expect(resp).to.not.be.null;
                 expect(resp.body).to.not.be.null;
+                expect(resp.body).to.be.instanceof(Object);
                 expect(resp.body).to.have.property("_id").to.be.equal(obj[0]._id);
                 expect(resp.body).to.have.property("name").and.not.be.null;
                 done();
@@ -187,18 +200,20 @@ mocha_1.describe("Incidents module responses", function () {
             .end(function (err, resp) {
             expect(err).to.be.null;
             expect(resp).to.not.be.null;
-            // expect(resp.body).to.not.be.null; -- It can be null
+            expect(resp.body).to.not.be.null;
             expect(resp.body).to.be.instanceof(Array);
-            expect(resp.body).length.to.be.gte(0);
-            expect(resp.body[0]).to.have.property("_id").to.not.be.null;
-            expect(resp.body[0]).to.have.property("kind").to.not.be.null;
-            expect(resp.body[0]).to.have.property("locationId").to.not.be.null;
-            expect(resp.body[0]).to.have.property("happenedAt").to.not.be.null;
-            expect(resp.body[0]).to.have.property("isArchived").to.not.be.null;
+            expect(resp.body).length.to.be.at.least(0);
+            if (resp.body.length > 0) {
+                expect(resp.body[0]).to.have.property("_id").to.not.be.null;
+                expect(resp.body[0]).to.have.property("kind").to.not.be.null;
+                expect(resp.body[0]).to.have.property("locationId").to.not.be.null;
+                expect(resp.body[0]).to.have.property("happenedAt").to.not.be.null;
+                expect(resp.body[0]).to.have.property("isArchived").to.not.be.null;
+            }
             done();
         });
     });
-    mocha_1.it("/POST /incidents/ -> Should return \"false\"", function (done) {
+    mocha_1.it("/POST /incidents/ (without sending parameters) -> Should return \"false\"", function (done) {
         chai.request(serverURL)
             .post("/incidents")
             .end(function (err, resp) {
@@ -210,7 +225,19 @@ mocha_1.describe("Incidents module responses", function () {
             done();
         });
     });
-    mocha_1.it("/POST /incidents/ -> Should insert a new incident", function (done) {
+    mocha_1.it("/POST /incidents/{bad-value}/archive -> Should return \"false\"", function (done) {
+        chai.request(serverURL)
+            .post("/incidents/badvalue/archive")
+            .end(function (err, resp) {
+            expect(err).to.be.null;
+            expect(resp).to.not.be.null;
+            expect(resp.body).to.not.be.null;
+            chai.assert.isTrue(typeof resp.body === typeof true);
+            expect(resp.body).to.be.equal(false);
+            done();
+        });
+    });
+    mocha_1.it("/POST /incidents/ (with the correct parameters) -> Should insert a new incident", function (done) {
         node_fetch_1.default(serverURL + "/localities")
             .then(function (response) { return response.json(); })
             .then(function (obj) {
@@ -247,9 +274,9 @@ mocha_1.describe("Incidents module responses", function () {
             expect(resp.body).length.to.be.gte(0);
             var responseExpected = resp.body.filter(function (incident) {
                 var incidentDate = new Date(incident.happenedAt);
-                return incidentDate.getDate() === 31
-                    && incidentDate.getMonth() === 5 - 1
-                    && incidentDate.getFullYear() === 2018;
+                return incidentDate.getUTCDate() === 31
+                    && incidentDate.getUTCMonth() === 5 - 1
+                    && incidentDate.getUTCFullYear() === 2018;
             });
             expect(responseExpected).to.be.instanceOf(Array);
             expect(responseExpected).to.have.length(1);

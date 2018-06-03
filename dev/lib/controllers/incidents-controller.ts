@@ -125,7 +125,9 @@ export class IncidentsController
                 if (resultObj === null)
                     // Simulate a "bad" response
                     return {
-                        result: null
+                        result: {
+                            n: null
+                        }
                     } as any;
                 else
                     return this.gomodMongo.UpdateOne(this.incidentsCollection, {
