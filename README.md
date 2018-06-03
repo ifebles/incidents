@@ -12,4 +12,4 @@ Node.js v.9.5.0
 5) In your browser, navigate to "localhost:8000/incidents" to see it working!
 
 
-PS: to run the tests, go to the ./incidents/dev/ folder and execute "npm test"
+PS: to run the tests, go to the ./incidents/dev/ folder and execute "npm test" or "npm run test-linux" (only for a linux environment)
