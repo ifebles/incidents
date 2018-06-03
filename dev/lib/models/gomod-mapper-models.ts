@@ -11,7 +11,7 @@ export enum MapperApplicationTypes {
 }
 
 export interface IMapperObjectType {
-    [route: string]: IMapperObject | any; // Verificar force <------------------------------
+    [route: string]: IMapperObject | any; // <--- To check
 } 
 
 export type IMapperObject = IMapperObjectType & {
